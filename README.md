@@ -1,8 +1,6 @@
 # Subruster
 Fast, compact and all-around subdomain enumeration tool written in Rust, which uses dns bruteforce, internet search and recursive http content search.
-    
-fast, compact and all-around subdomain enumeration tool written in Rust, which uses dns bruteforce, internet search and recursive http content search.
-    
+       
     DNS BRUTEFORCE MODULE:
     Takes a wordlist of subdomains and perform a dns query using threads.
     
