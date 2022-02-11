@@ -1,6 +1,7 @@
 # Subruster
 
-       ![Screenshot from 2022-02-11 13-54-22](https://user-images.githubusercontent.com/25774631/153579907-a3c83a30-a6c6-4a70-a79e-e84a40584e13.png)
+       ![Screenshot from 2022-02-11 13-54-22](https://user-images.githubusercontent.com/25774631/153579979-911a187e-119b-4438-a99e-ae8f6501b276.png)
+
 
 
 
