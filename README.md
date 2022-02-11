@@ -1,9 +1,8 @@
 # Subruster
 
 
-![Screenshot from 2022-02-11 13-54-22](https://user-images.githubusercontent.com/25774631/153580053-d5a9adba-909b-4d0e-89aa-f5b4624a897b.png)
 
-
+![Screenshot from 2022-02-11 13-59-26](https://user-images.githubusercontent.com/25774631/153580318-96e120a3-edf1-445c-b941-6e08f8dd64ff.png)
 
 
 Fast, compact and all-around subdomain enumeration tool written in Rust, which uses dns bruteforce, internet search and recursive http content search.
