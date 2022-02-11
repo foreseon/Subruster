@@ -25,25 +25,7 @@ impl BufReader {
     }
 }
 
-pub fn write_to_file(filename:String, path: String, content: String) -> std::io::Result<()> {
-    
-    match create_directory(&path) {
-        Ok(n) => {},
-        Err(e) => println!("{}", e.to_string())
-    }
-
-    let filename = filename.to_owned();
-    let mut path = path.to_owned();
-
-    path.push_str(&filename);
-
-    let mut file = File::create(path)?;
-    file.write_all(content.as_bytes())?;
-
-    Ok(())
-}
-
-fn create_directory (path: &String) -> std::io::Result<()> {
+pub fn create_directory(path: &String) -> std::io::Result<()> {
     fs::create_dir_all(path)?;
     Ok(())
 }

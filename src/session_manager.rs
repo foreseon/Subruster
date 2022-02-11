@@ -1,7 +1,6 @@
-use std::sync::mpsc::channel;
 use std::fs::File;
-use std::io::{self, prelude::*, BufReader};
-use std::time::{Duration, Instant};
+use std::io::{prelude::*, BufReader};
+use std::time::{Instant};
 use std::net::IpAddr;
 
 use crate::http_operations;
@@ -20,11 +19,11 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn get_subdomains_found(&self) -> Vec<String> {
-        self.subdomains_found.clone()
-    }
     pub fn add_subdomains_found(&mut self, subdomain: String) {
         self.subdomains_found.push(subdomain);
+    }
+    pub fn get_subdomains_found(&self) -> Vec<String> {
+        self.subdomains_found.clone()
     }
 
     pub fn get_resolved_subdomains(&self) -> Vec<String> {
@@ -91,10 +90,8 @@ pub async fn start_session_operations() -> std::io::Result<()> {
 
     let (session_args, useragentlist) = args::read_args();
     let mut current_session: Session = Session::init(session_args.get_current_useragent());
-    let verbose_mode = session_args.get_verbose_mode();
     let nameserver = session_args.get_nameserver();
     current_session.add_subdomains_found(session_args.get_hostname());
-
     current_session.set_useragent(session_args.get_current_useragent());
     
     //Start dns bruteforce
@@ -114,7 +111,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
             let tx = tx.clone();
             let subdomain_to_search = format!("{}.{}", line.unwrap(), session_args.get_hostname());
             pool.spawn(move || {
-                if call_dns_lookup(nameserver, &subdomain_to_search, verbose_mode) == subdomain_to_search {
+                if call_dns_lookup(nameserver, &subdomain_to_search) == subdomain_to_search {
                     tx.send(subdomain_to_search);
                 } 
 
@@ -124,7 +121,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
 
         let vecsubs: Vec<String> = rx.into_iter().collect();
         for x in 0..vecsubs.len() {
-            if(vecsubs[x] != "not_found")
+            if vecsubs[x] != "not_found"
             {
                 current_session.add_subdomains_found(vecsubs[x].clone());
             }
@@ -152,6 +149,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
     //Start HTTP content search
     if session_args.get_httpsearch_mode() {
         println!("\x1b[1m\x1b[40mRECURSIVE HTTP CONTENT SEARCH\x1b[0m");
+        println!("Sending requests...");
         let mut dns_subdomains : Vec<String> = current_session.get_subdomains_found();
         let mut x_counter = 0;
         while x_counter < dns_subdomains.len() {
@@ -160,7 +158,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
                 current_session.set_useragent(useragentlist.get_random_useragent());
             }
 
-            let (subdomain_list_http_content_search, http_https_url) = call_http_content_search(&dns_subdomains[x_counter], &current_session.get_useragent());
+            let (subdomain_list_http_content_search, http_https_url) = call_http_content_search(&dns_subdomains[x_counter], &current_session.get_useragent(), session_args.get_verbose_mode());
 
             if http_https_url != "" && session_args.get_log_http_https_domains() {
                 current_session.add_subdomains_http_https(http_https_url);
@@ -183,21 +181,22 @@ pub async fn start_session_operations() -> std::io::Result<()> {
     //Print results    
     let duration = start.elapsed();
     let current_session: Session = resolve_enumerated_subdomains_print(session_args.get_nameserver(), current_session).await;
-    report::print_result(current_session);
-    println!("\x1b[96mTime elapsed: {:?}\x1b[0m", duration);
+    let current_session = report::print_result(current_session);
+    println!("\x1b[92mTime elapsed: {:?}\x1b[0m", duration);
+    report::create_report(session_args, current_session);
     Ok(())
 }
 
-fn call_dns_lookup(nameserver: IpAddr, hostname: &String, verbose_mode: bool) -> String {
-    let result : std::io::Result<()> = dns_operations::hostname_lookup_print(nameserver, &hostname, verbose_mode);
+fn call_dns_lookup(nameserver: IpAddr, hostname: &String) -> String {
+    let result : std::io::Result<()> = dns_operations::hostname_lookup_print(nameserver, &hostname);
     match result {
         Ok(_n) => return hostname.to_string(),
         Err(n) => return n.to_string(),
     }
 }
 
-fn call_http_content_search(url: &String, useragent: &String) -> (Vec<String>,String) {
-    http_operations::send_http_https_parse_response(url, useragent)
+fn call_http_content_search(url: &String, useragent: &String, verbose: bool) -> (Vec<String>,String) {
+    http_operations::send_http_https_parse_response(url, useragent, verbose)
 }
 
 async fn resolve_enumerated_subdomains_print(nameserver: IpAddr, mut session: Session) -> Session {
@@ -209,7 +208,7 @@ async fn resolve_enumerated_subdomains_print(nameserver: IpAddr, mut session: Se
                     session.add_resolved_subdomains(session.get_subdomains_found()[x].clone());
                     session.add_resolved_ips(n);
                 },
-                Err(e) => session.add_unresolved_subdomains(session.get_subdomains_found()[x].clone()),
+                Err(_e) => session.add_unresolved_subdomains(session.get_subdomains_found()[x].clone()),
             }
         }
     println!();

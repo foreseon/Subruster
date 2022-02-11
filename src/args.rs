@@ -1,7 +1,6 @@
 use rand::Rng;
-use rand::seq::SliceRandom;
 use std::env;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr};
 use crate::file_operations;
 
 ///Command-line arguments saved to an Args struct after read/parsed
@@ -26,15 +25,15 @@ pub struct Args {
 impl Args {
     fn init() -> Args {
         Args {
-            hostname: "halborn.com".to_string(),
+            hostname: "".to_string(),
             nameserver: IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
             httpsearch_mode: true,
-            http_timeout: 4,
+            http_timeout: 3,
             thread_number: 250,
             searchengine_mode: true,
             dnsbruteforce_mode: true,
-            subdomain_txt_path: "./files/subdomains-list-top1000.txt".to_string(),
-            verbose_mode: true,
+            subdomain_txt_path: "./files/dnspod-top2000-sub-domains.txt".to_string(),
+            verbose_mode: false,
             log_http_https_domains: true,
             report_mode: true,
             report_folder_path: "./report".to_string(),
@@ -176,7 +175,6 @@ impl UserAgentList {
 
 ///Read and parse the command-line arguments
 pub fn read_args() -> (Args, UserAgentList)  {
-    let current_dir = env::current_dir();
     let mut session_args: Args = Args::init();
 
     let mut hostname_flag: bool = false;
@@ -189,7 +187,7 @@ pub fn read_args() -> (Args, UserAgentList)  {
 
     let mut useragentlist: UserAgentList = UserAgentList::init();
 
-    println!("\x1b[1m\x1b[91m{}\x1b[0m", print_logo());
+    println!("\x1b[1m{}\x1b[0m", print_logo());
 
     // Loop over arguments.
     for argument in env::args() {
@@ -346,7 +344,7 @@ fn display_args(args: &Args) -> String {
         -nameserver: {}
         -thread number: {}
 
-    Internet search: {}
+    [+] Internet search: {}
 
     [+] Recursive http content search: {}
         -request timeout: {}
@@ -364,7 +362,7 @@ fn display_args(args: &Args) -> String {
 fn help() -> String {
     format!(" 
 
-    Subruster v1.0 (Github link)
+    Subruster v1.0 (https://github.com/foreseon/Subruster)
 
     Subruster is a fast, compact and all-around subdomain enumeration tool written in Rust, which uses dns bruteforce, internet search and recursive http content search.
     
@@ -402,8 +400,6 @@ fn help() -> String {
         --randomagent: Uses a random agent
         
         --randomagent-everyrequest: Uses different useragent in each http request
-        
-        --loghttp: Logs the subdomains which have http or https open
         
         -h, --help: This page
         

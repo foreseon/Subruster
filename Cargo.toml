@@ -13,3 +13,4 @@ regex = "1.5.4"
 trust-dns-resolver = "0.19.4"
 tokio = { version = "0.2.18", features = ["full"] }
 anyhow = "1.0.28"
+chrono = "0.4.19"

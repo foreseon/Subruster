@@ -1,25 +1,17 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::io::{Error, ErrorKind};
 use anyhow::{anyhow, Result};
 use trust_dns_resolver::{ AsyncResolver, config::*};
 
 #[tokio::main]
-pub async fn hostname_lookup_print(nameserver: IpAddr, hostname: &String, verbose_mode: bool) -> std::io::Result<()> {
+pub async fn hostname_lookup_print(nameserver: IpAddr, hostname: &String) -> std::io::Result<()> {
     let notfound_error = Error::new(ErrorKind::Other, "not_found");
     let address = lookup(Some(&[nameserver]), hostname.clone()).await;
-    //println!("{}", hostname);
     match address {
-        Ok(n) => {
+        Ok(_n) => {
                 println!("Found subdomain: {}\x1b[0m   \x1b[1m(DNS bruteforce)\x1b[0m" , hostname);
-                if verbose_mode {
-                match n {
-                    IpAddr::V4(ip4) => print!("  ipv4: {}", ip4),
-                    IpAddr::V6(ip6) => print!("  ipv6: {}", ip6)
-                }
-                println!();
-            }
-        },
-        Err(e) => {return Err(notfound_error);},
+            },
+        Err(_e) => {return Err(notfound_error);},
     }
     
     Ok(())
