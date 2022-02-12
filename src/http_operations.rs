@@ -1,7 +1,7 @@
 use std::time::Duration;
 use regex::Regex;
 
-fn send_http_req(url: &String, timeout: u64, useragent: &String, verbose: bool) -> (String, bool) {
+pub fn send_http_req(url: &String, timeout: u64, useragent: &String, verbose: bool) -> (String, bool) {
     let mut url_http : String = "http://".to_string();
     url_http.push_str(url);
 
@@ -38,7 +38,7 @@ fn send_http_req(url: &String, timeout: u64, useragent: &String, verbose: bool) 
         }
 }
     
-fn send_https_req(url: &String, timeout: u64, useragent: &String, verbose: bool) -> (String, bool) {
+pub fn send_https_req(url: &String, timeout: u64, useragent: &String, verbose: bool) -> (String, bool) {
     let mut url_https : String = "https://".to_string();
     url_https.push_str(url);
 
@@ -78,9 +78,9 @@ fn send_https_req(url: &String, timeout: u64, useragent: &String, verbose: bool)
 }
 
 
-pub fn send_http_https_parse_response(url: &String, useragent: &String, verbose: bool) -> (Vec<String>, String) {
-    let (response_http, is_http) = send_http_req(url, 4, useragent, verbose);
-    let (response_https, is_https) = send_https_req(url, 4, useragent, verbose);
+pub fn send_http_https_parse_response(url: &String, useragent: &String, timeout: u64, verbose: bool) -> (Vec<String>, String) {
+    let (response_http, is_http) = send_http_req(url, timeout, useragent, verbose);
+    let (response_https, is_https) = send_https_req(url, timeout, useragent, verbose);
 
     let mut webserver_url = "".to_string();
     if is_https {
@@ -119,6 +119,30 @@ pub fn send_http_https_parse_response(url: &String, useragent: &String, verbose:
     (subdomain_list, webserver_url)
 }
 
+pub fn find_webservice_available_urls(url_list: Vec<String>, useragent: &String) -> Vec<String> {
+    let mut webservice_url_list : Vec<String> = Vec::<String>::new();
+    println!("Checking available web services");
+    for url in url_list {
+        print!(".");
+        let (response_http, is_http) = send_http_req(&url, 3, useragent, false);
+        let (response_https, is_https) = send_https_req(&url, 3, useragent, false);
+        if is_https || is_http {
+            let mut webserver_url = "".to_string();
+            if is_https {
+                webserver_url.push_str("https://");
+                webserver_url.push_str(&url);
+            }
+            else if is_http {
+                webserver_url.push_str("http://");
+                webserver_url.push_str(&url);
+            }
+            webservice_url_list.push(webserver_url);
+        }
+    }
+
+    webservice_url_list
+}
+
 pub fn search_internet(hostname: &String, useragent: &String) -> Vec<String> {
 
     let mut subdomain_list : Vec<String> = Vec::<String>::new();
@@ -141,7 +165,7 @@ fn search_crtsh(hostname: &String, useragent: &String) -> Vec<String> {
     url.push_str(hostname);
     url.push_str("&output=json");
 
-    let (response, _webserver_url) = send_https_req(&url, 35, useragent, true);
+    let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
 
     let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
     subdomain_regex_string.push_str(hostname);
@@ -163,7 +187,7 @@ fn search_bufferoverrun(hostname: &String, useragent: &String) -> Vec<String> {
     let mut url = "dns.bufferover.run/dns?q=".to_string().to_owned();
     url.push_str(hostname);
 
-    let (response, _webserver_url) = send_https_req(&url, 35, useragent, true);
+    let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
 
     let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
     subdomain_regex_string.push_str(hostname);
@@ -185,7 +209,7 @@ fn search_dnsrepo(hostname: &String, useragent: &String) -> Vec<String> {
     let mut url = "dnsrepo.noc.org/?domain=".to_string().to_owned();
     url.push_str(hostname);
 
-    let (response, _webserver_url) = send_https_req(&url, 35, useragent, true);
+    let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
     let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
     subdomain_regex_string.push_str(hostname);
 
@@ -220,7 +244,7 @@ fn search_bing(hostname: &String, useragent: &String, depth: u32) -> Vec<String>
             url.push_str("1");
         }
             
-        let (response, _webserver_url) = send_https_req(&url, 35, useragent, true);
+        let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
         let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
         subdomain_regex_string.push_str(hostname);
     
@@ -251,7 +275,7 @@ fn search_yandex(hostname: &String, useragent: &String, depth: u32) -> Vec<Strin
         url.push_str("&p=");
         url.push_str(&x.to_string());
             
-        let (response, _webserver_url) = send_https_req(&url, 35, useragent, true);
+        let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
         let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
         subdomain_regex_string.push_str(hostname);
     

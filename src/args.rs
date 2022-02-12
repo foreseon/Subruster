@@ -28,7 +28,7 @@ impl Args {
             hostname: "".to_string(),
             nameserver: IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
             httpsearch_mode: true,
-            http_timeout: 3,
+            http_timeout: 6,
             thread_number: 250,
             searchengine_mode: true,
             dnsbruteforce_mode: true,
@@ -142,12 +142,13 @@ impl Args {
     }
 }
 ///Used to hold useragents in a list in order to chance useragents dynamically during execution
+#[derive(Clone)]
 pub struct UserAgentList {
     useragents: Vec<String>
 }
 
 impl UserAgentList {
-    fn init() -> UserAgentList {
+    pub fn init() -> UserAgentList {
         UserAgentList {
             useragents: Vec::<String>::new(),
         }
@@ -169,6 +170,10 @@ impl UserAgentList {
         let mut rng = rand::thread_rng();
         let agent_file_size = self.useragents.len();
         self.useragents[rng.gen_range(0..agent_file_size-1)].clone()
+    }
+
+    pub fn get_useragent_list(&self) -> Vec<String> {
+        self.useragents.clone()
     }
 }
 
