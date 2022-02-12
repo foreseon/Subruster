@@ -29,7 +29,7 @@ impl Args {
             nameserver: IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
             httpsearch_mode: true,
             http_timeout: 6,
-            thread_number: 250,
+            thread_number: 200,
             searchengine_mode: true,
             dnsbruteforce_mode: true,
             subdomain_txt_path: "./files/dnspod-top2000-sub-domains.txt".to_string(),
