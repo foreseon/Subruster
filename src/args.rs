@@ -34,7 +34,7 @@ impl Args {
             dnsbruteforce_mode: true,
             subdomain_txt_path: "./files/dnspod-top2000-sub-domains.txt".to_string(),
             verbose_mode: false,
-            log_http_https_domains: true,
+            log_http_https_domains: false,
             report_mode: true,
             report_folder_path: "./report".to_string(),
             random_agent_in_every_req: false,
@@ -234,8 +234,8 @@ pub fn read_args() -> (Args, UserAgentList)  {
         }
 
         // If "--loghttp" detected, set dnsbruteforce_mode to true.
-        if argument == "--nohttplogging" {
-            session_args.set_log_http_https_domains(false);
+        if argument == "--loghttp" {
+            session_args.set_log_http_https_domains(true);
             continue;
         }
 
@@ -356,11 +356,13 @@ fn display_args(args: &Args) -> String {
         -user-agent: {}
         -random user-agent in every-req: {}
 
+    [+] Log subdomains with http/s: {}
+
     [+] Reporting: {}
         -report folder: {}
 
     Verbose: {}    
-    ", args.get_hostname(), args.get_dnsbruteforce_mode().to_string(), args.get_subdomain_txt_path(), args.get_nameserver(), args.get_thread_number().to_string(), args.get_searchengine_mode().to_string(), args.get_httpsearch_mode().to_string(), args.get_http_timeout().to_string(), args.get_current_useragent(), args.get_random_agent_in_every_req().to_string(), args.get_report_mode().to_string(), args.get_report_folder_path() ,args.get_verbose_mode().to_string()
+    ", args.get_hostname(), args.get_dnsbruteforce_mode().to_string(), args.get_subdomain_txt_path(), args.get_nameserver(), args.get_thread_number().to_string(), args.get_searchengine_mode().to_string(), args.get_httpsearch_mode().to_string(), args.get_http_timeout().to_string(), args.get_current_useragent(), args.get_random_agent_in_every_req().to_string(), args.get_log_http_https_domains().to_string(), args.get_report_mode().to_string(), args.get_report_folder_path() ,args.get_verbose_mode().to_string()
 )
 }
 
@@ -388,7 +390,7 @@ fn help() -> String {
         
         -ns, --nameserver <nameserver ip>: Specifies the nameserver (default is 8.8.8.8)
         
-        -t, --threads <thread number>: Specifies the number of threads for dns bruteforce module
+        -t, --threads <thread number>: Specifies the number of threads for dns bruteforce module (You may need to execute 'ulimit -n 999999' in your terminal if you want to work with big number of threads)
         
         --nohttp: Disables http content search module
         
@@ -399,6 +401,8 @@ fn help() -> String {
         --report-folder <report folder>: Specifies the output report folder (default is ./reports)
         
         -v, --verbose: Verbose mode
+
+        --loghttp: Checks if subdomains have http/s services open and logs them
         
         --useragent <useragent>: Specifies the useragent in http requests
         

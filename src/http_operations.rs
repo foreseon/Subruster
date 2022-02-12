@@ -6,7 +6,7 @@ pub fn send_http_req(url: &String, timeout: u64, useragent: &String, verbose: bo
     url_http.push_str(url);
 
     if verbose {
-    println!("\x1b[90mSearching subdomains in: {} response\x1b[0m" , url_http);
+        println!("\x1b[90mSearching subdomains in: {} response\x1b[0m" , url_http);
     }
 
     let client = reqwest::blocking::Client::builder().danger_accept_invalid_certs(true).timeout(Duration::from_secs(timeout)).build().unwrap();

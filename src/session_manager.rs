@@ -1,3 +1,4 @@
+
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use std::time::{Instant};
@@ -159,9 +160,8 @@ pub async fn start_session_operations() -> std::io::Result<()> {
     if session_args.get_httpsearch_mode() {
         println!("\x1b[1m\x1b[40mRECURSIVE HTTP CONTENT SEARCH\x1b[0m");
         println!("Sending requests...");
-
         let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(30)
+        .num_threads(55)
         .build()
         .unwrap();
 
