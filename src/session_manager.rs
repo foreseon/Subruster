@@ -238,7 +238,10 @@ pub async fn start_session_operations() -> std::io::Result<()> {
 
     let current_session = report::print_result(current_session);
     println!("\x1b[92mTime elapsed: {:?}\x1b[0m", duration);
+
+    if session_args.get_report_mode() {
     report::create_report(session_args, current_session);
+    }
     Ok(())
 }
 

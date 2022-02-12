@@ -233,9 +233,15 @@ pub fn read_args() -> (Args, UserAgentList)  {
             continue;
         }
 
-        // If "--loghttp" detected, set dnsbruteforce_mode to true.
+        // If "--loghttp" detected, set log_http_https_domains to true.
         if argument == "--loghttp" {
             session_args.set_log_http_https_domains(true);
+            continue;
+        }
+
+        // If "--noreport" detected, set report_mode to false.
+        if argument == "--noreport" {
+            session_args.set_report_mode(false);
             continue;
         }
 
