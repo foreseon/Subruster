@@ -4,10 +4,10 @@
 
 Fast, compact and all-around subdomain enumeration tool written in Rust, which uses dns bruteforce, internet search and recursive http content search.
 
+Seperates resolved, unresolved and subdomains with webservices inside report.
 
 
-https://user-images.githubusercontent.com/25774631/153846718-70441041-855b-4239-89d8-06634de6644d.mp4
-
+https://user-images.githubusercontent.com/25774631/153847521-22aa46f7-4c22-43bb-919e-f00277b71712.mp4
 
 
     DNS BRUTEFORCE MODULE:
