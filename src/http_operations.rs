@@ -102,8 +102,13 @@ pub fn send_http_https_parse_response(url: &String, useragent: &String, timeout:
     let mut subdomain_regex_string2 = r"([[:alnum:]]*?)\.".to_string();
     subdomain_regex_string2.push_str(url);
 
+    let mut subdomain_regex_string3 = r"(-[[:alnum:]]*?)\.".to_string();
+    subdomain_regex_string3.push_str(url);
+    
+
     let regex1 = Regex::new(&subdomain_regex_string1).unwrap();
     let regex2 = Regex::new(&subdomain_regex_string2).unwrap();
+    let regex3 = Regex::new(&subdomain_regex_string3).unwrap();
 
     for subdomain in regex1.captures_iter(&response) {
         subdomain_list.push(subdomain[0].to_string());
@@ -113,32 +118,51 @@ pub fn send_http_https_parse_response(url: &String, useragent: &String, timeout:
         subdomain_list.push(subdomain[0].to_string());
     }
 
+    for subdomain in regex3.captures_iter(&response) {
+        subdomain_list.push(subdomain[0].to_string());
+    }
+
     subdomain_list.sort();
     subdomain_list.dedup();
     
     (subdomain_list, webserver_url)
 }
 
-pub fn find_webservice_available_urls(url_list: Vec<String>, useragent: &String) -> Vec<String> {
+pub fn find_webservice_available_urls(url_list: Vec<String>, useragent: &String, thread_num: u64) -> Vec<String> {
     let mut webservice_url_list : Vec<String> = Vec::<String>::new();
     println!("Checking available web services");
+
+    let pool = rayon::ThreadPoolBuilder::new()
+    .num_threads(thread_num.try_into().unwrap())
+    .build()
+    .unwrap();
+
+    let (tx, rx) = std::sync::mpsc::channel();
+
     for url in url_list {
         print!(".");
-        let (response_http, is_http) = send_http_req(&url, 3, useragent, false);
-        let (response_https, is_https) = send_https_req(&url, 3, useragent, false);
-        if is_https || is_http {
-            let mut webserver_url = "".to_string();
-            if is_https {
-                webserver_url.push_str("https://");
-                webserver_url.push_str(&url);
+        let tx = tx.clone();
+        let useragent: String = useragent.clone();
+        pool.spawn(move || {
+            let (response_http, is_http) = send_http_req(&url, 3, &useragent, false);
+            let (response_https, is_https) = send_https_req(&url, 3, &useragent.clone(), false);
+            if is_https || is_http {
+                let mut webserver_url = "".to_string();
+                if is_https {
+                    webserver_url.push_str("https://");
+                    webserver_url.push_str(&url);
+                }
+                else if is_http {
+                    webserver_url.push_str("http://");
+                    webserver_url.push_str(&url);
+                }
+                tx.send(webserver_url);
             }
-            else if is_http {
-                webserver_url.push_str("http://");
-                webserver_url.push_str(&url);
-            }
-            webservice_url_list.push(webserver_url);
-        }
+        });
     }
+    drop(tx);
+
+    webservice_url_list = rx.into_iter().collect();
 
     webservice_url_list
 }
@@ -167,7 +191,7 @@ fn search_crtsh(hostname: &String, useragent: &String) -> Vec<String> {
 
     let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
 
-    let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
+    let mut subdomain_regex_string = r"([[:punct:] && [:alnum:]]*?)\.".to_string();
     subdomain_regex_string.push_str(hostname);
 
     let regex = Regex::new(&subdomain_regex_string).unwrap();
@@ -189,7 +213,7 @@ fn search_bufferoverrun(hostname: &String, useragent: &String) -> Vec<String> {
 
     let (response, _webserver_url) = send_https_req(&url, 45, useragent, true);
 
-    let mut subdomain_regex_string = r"([[:alnum:]]*?)\.".to_string();
+    let mut subdomain_regex_string = r"([[:punct:] && [:alnum:]]*?)\.".to_string();
     subdomain_regex_string.push_str(hostname);
 
     let regex = Regex::new(&subdomain_regex_string).unwrap();

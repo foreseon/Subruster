@@ -11,7 +11,8 @@ pub struct Args {
     httpsearch_mode: bool,
     http_timeout: u64,
     searchengine_mode: bool,
-    thread_number: u32,
+    dnsthread_number: u64,
+    httpthread_number: u64,
     dnsbruteforce_mode: bool,
     report_mode: bool,
     subdomain_txt_path: String,
@@ -28,8 +29,9 @@ impl Args {
             hostname: "".to_string(),
             nameserver: IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
             httpsearch_mode: true,
-            http_timeout: 6,
-            thread_number: 200,
+            http_timeout: 5,
+            dnsthread_number: 200,
+            httpthread_number: 110,
             searchengine_mode: true,
             dnsbruteforce_mode: true,
             subdomain_txt_path: "./files/dnspod-top2000-sub-domains.txt".to_string(),
@@ -56,12 +58,20 @@ impl Args {
         self.nameserver = nameserver.parse().unwrap();
     }
 
-    pub fn get_thread_number(&self) -> u32 {
-        self.thread_number
+    pub fn get_dnsthread_number(&self) -> u64 {
+        self.dnsthread_number
     }
-    pub fn set_thread_number(&mut self, thread_number: String ) {
-        let t_n = thread_number.parse().unwrap();
-        self.thread_number = t_n;
+    pub fn set_dnsthread_number(&mut self, dnsthread_number: String ) {
+        let t_n = dnsthread_number.parse().unwrap();
+        self.dnsthread_number = t_n;
+    }
+
+    pub fn get_httpthread_number(&self) -> u64 {
+        self.httpthread_number
+    }
+    pub fn set_httpthread_number(&mut self, httpthread_number: String ) {
+        let t_n = httpthread_number.parse().unwrap();
+        self.httpthread_number = t_n;
     }
 
     pub fn get_httpsearch_mode(&self) -> bool {
@@ -187,7 +197,8 @@ pub fn read_args() -> (Args, UserAgentList)  {
     let mut report_folder_path_flag: bool = false;
     let mut current_useragent_flag: bool = false;
     let mut nameserver_flag: bool = false;
-    let mut thread_flag: bool = false;
+    let mut dnsthread_flag: bool = false;
+    let mut httpthread_flag: bool = false;
     let mut http_timeout_flag: bool = false;
 
     let mut useragentlist: UserAgentList = UserAgentList::init();
@@ -325,15 +336,27 @@ pub fn read_args() -> (Args, UserAgentList)  {
             continue;
         }
 
-        // Use flag after "--threads" or "-t" was detected to set argument.
-        if thread_flag {
-            session_args.set_thread_number(argument);
-            thread_flag = false;
+        // Use flag after "--dnsthreads" or "-dt" was detected to set argument.
+        if dnsthread_flag {
+            session_args.set_dnsthread_number(argument);
+            dnsthread_flag = false;
             continue;
         }
-        // If "--threads" or "-t" detected, set thread_flag flag bool.
-        if argument == "--threads" || argument == "-t"  {
-            thread_flag = true;
+        // If "--dnsthreads" or "-dt" detected, set thread_flag flag bool.
+        if argument == "--dnsthread" || argument == "-dt"  {
+            dnsthread_flag = true;
+            continue;
+        }
+
+        // Use flag after "--httpthreads" or "-ht" was detected to set argument.
+        if httpthread_flag {
+            session_args.set_httpthread_number(argument);
+            httpthread_flag = false;
+            continue;
+        }
+        // If "--dnsthreads" or "-dt" detected, set thread_flag flag bool.
+        if argument == "--httpthread" || argument == "-ht"  {
+            httpthread_flag = true;
             continue;
         }
         
@@ -353,7 +376,7 @@ fn display_args(args: &Args) -> String {
     [+] Dns bruteforce: {}
         -subdomain wordlist: {}
         -nameserver: {}
-        -thread number: {}
+        -dns thread number: {}
 
     [+] Internet search: {}
 
@@ -361,14 +384,16 @@ fn display_args(args: &Args) -> String {
         -request timeout: {}
         -user-agent: {}
         -random user-agent in every-req: {}
+        -http threadnumber: {}
 
     [+] Log subdomains with http/s: {}
+        -http threadnumber: {}
 
     [+] Reporting: {}
         -report folder: {}
 
     Verbose: {}    
-    ", args.get_hostname(), args.get_dnsbruteforce_mode().to_string(), args.get_subdomain_txt_path(), args.get_nameserver(), args.get_thread_number().to_string(), args.get_searchengine_mode().to_string(), args.get_httpsearch_mode().to_string(), args.get_http_timeout().to_string(), args.get_current_useragent(), args.get_random_agent_in_every_req().to_string(), args.get_log_http_https_domains().to_string(), args.get_report_mode().to_string(), args.get_report_folder_path() ,args.get_verbose_mode().to_string()
+    ", args.get_hostname(), args.get_dnsbruteforce_mode().to_string(), args.get_subdomain_txt_path(), args.get_nameserver(), args.get_dnsthread_number().to_string(), args.get_searchengine_mode().to_string(), args.get_httpsearch_mode().to_string(), args.get_http_timeout().to_string(), args.get_current_useragent(), args.get_random_agent_in_every_req().to_string(), args.get_httpthread_number().to_string(), args.get_log_http_https_domains().to_string(),args.get_httpthread_number().to_string(), args.get_report_mode().to_string(), args.get_report_folder_path() ,args.get_verbose_mode().to_string()
 )
 }
 

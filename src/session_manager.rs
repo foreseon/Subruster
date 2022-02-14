@@ -36,6 +36,9 @@ impl Session {
     pub fn add_resolved_subdomains(&mut self, subdomain: String) {
         self.resolved_subdomains.push(subdomain);
     }
+    pub fn set_resolved_subdomains(&mut self, resolved_subdomains: Vec<String>) {
+        self.resolved_subdomains = resolved_subdomains;
+    }
 
     pub fn get_resolved_ips(&self) -> Vec<IpAddr> {
         self.resolved_ips.clone()
@@ -43,12 +46,18 @@ impl Session {
     pub fn add_resolved_ips(&mut self, ip: IpAddr) {
         self.resolved_ips.push(ip);
     }
+    pub fn set_resolved_ips(&mut self, resolved_ips: Vec<IpAddr>) {
+        self.resolved_ips = resolved_ips;
+    }
 
     pub fn get_unresolved_subdomains(&self) -> Vec<String> {
         self.unresolved_subdomains.clone()
     }
     pub fn add_unresolved_subdomains(&mut self, subdomain: String) {
         self.unresolved_subdomains.push(subdomain);
+    }
+    pub fn set_unresolved_subdomains(&mut self, unresolved_subdomains: Vec<String>) {
+        self.unresolved_subdomains = unresolved_subdomains;
     }
 
     pub fn get_subdomains_http_https(&self) -> Vec<String> {
@@ -108,7 +117,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
     if session_args.get_dnsbruteforce_mode() {
         println!("\x1b[1m\x1b[40mDNS BRUTEFORCE\x1b[0m");
         let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(session_args.get_thread_number().try_into().unwrap())
+        .num_threads(session_args.get_dnsthread_number().try_into().unwrap())
         .build()
         .unwrap();
 
@@ -122,6 +131,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
             let subdomain_to_search = format!("{}.{}", line.unwrap(), session_args.get_hostname());
             pool.spawn(move || {
                 if call_dns_lookup(nameserver, &subdomain_to_search) == subdomain_to_search {
+                    println!("Found subdomain: {}\x1b[0m   \x1b[1m(DNS bruteforce)\x1b[0m" , subdomain_to_search);
                     tx.send(subdomain_to_search);
                 } 
 
@@ -161,7 +171,7 @@ pub async fn start_session_operations() -> std::io::Result<()> {
         println!("\x1b[1m\x1b[40mRECURSIVE HTTP CONTENT SEARCH\x1b[0m");
         println!("Sending requests...");
         let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(55)
+        .num_threads(session_args.get_httpthread_number().try_into().unwrap())
         .build()
         .unwrap();
 
@@ -229,10 +239,11 @@ pub async fn start_session_operations() -> std::io::Result<()> {
 
     //Print results    
     let duration = start.elapsed();
-    let mut current_session: Session = resolve_enumerated_subdomains_print(session_args.get_nameserver(), current_session).await;
+    
+    let mut current_session: Session = resolve_enumerated_subdomains(session_args.get_nameserver(), current_session, session_args.get_dnsthread_number()).await;
     
     if session_args.get_log_http_https_domains() {
-        let webservice_url_list : Vec<String> = http_operations::find_webservice_available_urls(current_session.get_resolved_subdomains(), &current_session.get_useragent());
+        let webservice_url_list : Vec<String> = http_operations::find_webservice_available_urls(current_session.get_resolved_subdomains(), &current_session.get_useragent(), session_args.get_httpthread_number());
         current_session.set_subdomains_http_https(webservice_url_list);
     }
 
@@ -242,11 +253,12 @@ pub async fn start_session_operations() -> std::io::Result<()> {
     if session_args.get_report_mode() {
     report::create_report(session_args, current_session);
     }
+    
     Ok(())
 }
 
 fn call_dns_lookup(nameserver: IpAddr, hostname: &String) -> String {
-    let result : std::io::Result<()> = dns_operations::hostname_lookup_print(nameserver, &hostname);
+    let result = dns_operations::hostname_lookup_return_ip(nameserver, &hostname);
     match result {
         Ok(_n) => return hostname.to_string(),
         Err(n) => return n.to_string(),
@@ -257,18 +269,50 @@ fn call_http_content_search(url: &String, useragent: &String, timeout: u64, verb
     http_operations::send_http_https_parse_response(url, useragent, timeout, verbose)
 }
 
-async fn resolve_enumerated_subdomains_print(nameserver: IpAddr, mut session: Session) -> Session {
+
+async fn resolve_enumerated_subdomains(nameserver: IpAddr, mut session: Session, thread_num: u64) -> Session {
     print!("Resolving found domains");
-        for x in 0..session.get_subdomains_found().len() {
-            print!(".");
-            match dns_operations::lookup(Some(&[nameserver]), session.get_subdomains_found()[x].clone()).await {
-                Ok(n) =>  {
-                    session.add_resolved_subdomains(session.get_subdomains_found()[x].clone());
-                    session.add_resolved_ips(n);
-                },
-                Err(e) => session.add_unresolved_subdomains(session.get_subdomains_found()[x].clone()),
-            }
+
+    let pool = rayon::ThreadPoolBuilder::new()
+    .num_threads(thread_num.try_into().unwrap())
+    .build()
+    .unwrap();
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (tx1, rx1) = std::sync::mpsc::channel();
+    let (tx2, rx2) = std::sync::mpsc::channel();
+
+        for subdomain in session.get_subdomains_found() {
+            let tx = tx.clone(); //resolved subdomain
+            let tx1 = tx1.clone(); //resolved ip
+            let tx2 = tx2.clone(); //unresolved subdomain
+
+            pool.spawn(move || {
+                match dns_operations::hostname_lookup_return_ip(nameserver, &subdomain) {
+                    Ok(n) =>  {
+                        //session.add_resolved_subdomains(session.get_subdomains_found()[x].clone());
+                        tx.send(subdomain.clone());
+                        tx1.send(n);
+                        //session.add_resolved_ips(n);
+                    },
+                    Err(e) => { 
+                        //session.add_unresolved_subdomains(session.get_subdomains_found()[x].clone());
+                        tx2.send(subdomain.clone());
+                    },
+                }
+            });  
+
         }
+
+        drop(tx);
+        drop(tx1);
+        drop(tx2);
+
+        session.set_resolved_subdomains(rx.into_iter().collect());
+        session.set_resolved_ips(rx1.into_iter().collect());
+        session.set_unresolved_subdomains(rx2.into_iter().collect());
+
+
     println!();
     session
 }

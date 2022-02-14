@@ -21,7 +21,7 @@ pub fn print_result(session: Session) -> Session {
     }
     println!("\x1b[1m\x1b[92mSUBDOMAINS WITH HTTP/S SERVICE - {}\x1b[0m", session.get_subdomains_http_https().len());
     if session.get_subdomains_http_https().len() == 0 {
-        println!("No HTTP/S subdomain found, enable httpcontent search if disabled")
+        println!("No HTTP/S subdomain found, enable web service search by adding --loghttp")
     }
     for x in 0..session.get_subdomains_http_https().len() {
         println!("{}", session.get_subdomains_http_https()[x]);

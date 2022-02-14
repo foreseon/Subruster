@@ -3,18 +3,27 @@ use std::io::{Error, ErrorKind};
 use anyhow::{anyhow, Result};
 use trust_dns_resolver::{ AsyncResolver, config::*};
 
+/*
 #[tokio::main]
-pub async fn hostname_lookup_print(nameserver: IpAddr, hostname: &String) -> std::io::Result<()> {
+pub async fn hostname_lookup_print(nameserver: IpAddr, hostname: &String) -> std::io::Result<(IpAddr)> {
     let notfound_error = Error::new(ErrorKind::Other, "not_found");
     let address = lookup(Some(&[nameserver]), hostname.clone()).await;
     match address {
-        Ok(_n) => {
+        Ok(n) => {
                 println!("Found subdomain: {}\x1b[0m   \x1b[1m(DNS bruteforce)\x1b[0m" , hostname);
+                return n;
             },
-        Err(_e) => {return Err(notfound_error);},
+        Err(e) => { return Err(e); },
     }
-    
-    Ok(())
+
+}
+*/
+
+
+#[tokio::main]
+pub async fn hostname_lookup_return_ip(nameserver: IpAddr, hostname: &String) -> Result<IpAddr> {
+    let address = lookup(Some(&[nameserver]), hostname.clone()).await;
+    address
 }
 
 pub async fn lookup(nameservers: Option<&[IpAddr]>, host: String) -> Result<IpAddr> {
@@ -31,6 +40,8 @@ pub async fn lookup(nameservers: Option<&[IpAddr]>, host: String) -> Result<IpAd
         None => Err(anyhow!("not found lookup address"))
     }
 }
+
+
 
 /*
 pub fn hostname_lookup(hostname: String) -> (Vec<SocketAddr>,bool)  {
